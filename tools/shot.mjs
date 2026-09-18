@@ -492,14 +492,16 @@ async function main() {
     });
   });
 
+  // --url 跑线上时这里就不是 file:// 了，照实打印协议名
+  const proto = url.slice(0, url.indexOf(':'));
   console.log('\n运行时状态:');
   if (imgProbe.empty) {
-    console.log('  file:// <img> 探针 — 跳过（TERRA_PHOTOS 是空的）');
+    console.log(`  ${proto}:// <img> 探针 — 跳过（TERRA_PHOTOS 是空的）`);
   } else if (imgProbe.error) {
-    console.log(`  file:// <img> 探针 ✗ ${imgProbe.src} 加载失败`);
+    console.log(`  ${proto}:// <img> 探针 ✗ ${imgProbe.src} 加载失败`);
     problems.push(`[配图] ${imgProbe.src} 加载失败`);
   } else {
-    console.log(`  file:// <img> 探针 ✓ ${imgProbe.name}　${imgProbe.w}×${imgProbe.h}`);
+    console.log(`  ${proto}:// <img> 探针 ✓ ${imgProbe.name}　${imgProbe.w}×${imgProbe.h}`);
   }
 
   if (info) {
