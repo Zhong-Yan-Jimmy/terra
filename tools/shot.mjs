@@ -121,6 +121,11 @@ const VIEWS = [
   { name: '32-narrow-photo', lat: 27.99, lon: 86.93, pick: true, dist: 2.4,
     viewport: { width: 390, height: 844 },
     desc: '窄屏 · 点选珠峰，卡片带照片后仍应完整可见、不横向溢出' },
+  // 1366×768 的笔记本扣掉浏览器边框，可视区就剩这么多高。
+  // 卡片加了 16:9 的照片后纵向吃紧，矮屏会把它压成 21:9 横带（见 css/style.css）
+  { name: '33-short-photo', lat: 27.99, lon: 86.93, pick: true, dist: 2.4,
+    viewport: { width: 1366, height: 640 },
+    desc: '矮屏 · 点选珠峰，照片应压成横带，卡片仍能从头滚到尾' },
 ];
 
 const args = Object.fromEntries(
