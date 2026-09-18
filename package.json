@@ -1,0 +1,17 @@
+{
+  "name": "terra",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TERRA · 地球地理探索系统 —— 纯静态、零构建、全离线的地理科普网页",
+  "type": "module",
+  "scripts": {
+    "fetch": "node tools/fetch-data.mjs",
+    "verify": "node tools/verify-uv.mjs"
+  },
+  "devDependencies": {
+    "geotiff": "^2.1.3",
+    "jpeg-js": "^0.4.4",
+    "pngjs": "^7.0.0",
+    "puppeteer-core": "^25.11.0"
+  }
+}

@@ -1,0 +1,13 @@
+# 仓库里一律存 LF，检出也用 LF。
+#
+# Git for Windows 默认会把行尾转成 CRLF，于是每次 add 都刷一屏警告。
+# 这个项目的 assets/ 下有内联了上兆 base64 的大文件，让转换反复经手它们
+# 没有好处；统一成 LF 之后，任何人 clone 下来的字节都和这里一致。
+* text=auto eol=lf
+
+# 二进制就明说，别让任何转换碰
+*.jpg binary
+*.png binary
+*.tif binary
+*.ico binary
+*.woff2 binary
