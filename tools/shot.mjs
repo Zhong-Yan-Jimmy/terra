@@ -16,11 +16,13 @@
 import puppeteer from 'puppeteer-core';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = join(ROOT, 'tools/out');
+// 线上跑的截图另放一处，免得把本地 file:// 那批覆盖掉——
+// 混在同一个目录里就分不清哪张是哪张了。--url 时改指 out/remote
+let OUT = join(ROOT, 'tools/out');
 
 const BROWSERS = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -117,6 +119,8 @@ const args = Object.fromEntries(
   })
 );
 
+if (args.url) OUT = join(ROOT, 'tools/out/remote');
+
 function findBrowser() {
   for (const p of BROWSERS) if (existsSync(p)) return p;
   throw new Error('找不到 Chrome 或 Edge，请手动指定路径');
@@ -136,6 +140,9 @@ async function main() {
   const glArgs = args.gpu
     ? ['--use-gl=angle', '--use-angle=d3d11', '--ignore-gpu-blocklist']
     : ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+
+  // 测线上地址时，浏览器得自己走代理——它不认 git 的 http.proxy 配置
+  if (args.proxy) glArgs.push('--proxy-server=' + args.proxy);
 
   const browser = await puppeteer.launch({
     executablePath: browserPath,
@@ -160,7 +167,10 @@ async function main() {
   page.on('pageerror', e => problems.push(`[异常] ${e.message}`));
   page.on('requestfailed', r => problems.push(`[请求失败] ${r.url().split('/').pop()} — ${r.failure()?.errorText}`));
 
-  const url = pathToFileURL(join(ROOT, 'index.html')).href;
+  // 默认测本地 file://。--url= 指向线上（例如 GitHub Pages）时，
+  // 验的是「传上去的东西」和「能跑的东西」是不是同一件——
+  // file:// 与 https:// 的差别，足够让一个黑球藏过一整轮
+  const url = args.url || pathToFileURL(join(ROOT, 'index.html')).href;
   console.log(`打开: ${url}`);
   await page.goto(url, { waitUntil: 'load', timeout: 60000 });
 
@@ -404,7 +414,8 @@ async function main() {
     report.join('\n') + '\n\n控制台:\n' + (problems.join('\n') || '(无)'), 'utf8');
 
   await browser.close();
-  console.log('\n截图输出目录: tools/out/');
+  // 用 OUT 算出来，别再写死——跑线上时目录是 tools/out/remote
+  console.log('\n截图输出目录: ' + relative(ROOT, OUT).replace(/\\/g, '/') + '/');
 }
 
 main().catch(e => { console.error('\n✗ ' + e.message); process.exit(1); });
