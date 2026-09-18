@@ -118,7 +118,9 @@ export const PHOTOS = {
 
   /* —— 构造地貌 —— */
   '东非大裂谷':        { slug: 'east-african-rift',    en: 'East African Rift',
-                         file: 'Great Rift Valley in Kenya by Renvoy (2).jpg' },
+                         // 原来那张是隔着绿丘远眺，看不出"地堑"；换成从 Ol Doinyo Lengai
+                         // （马赛语「神山」）山顶俯瞰的黄昏裂谷，陡崖与平底一目了然
+                         file: 'Beauty of the East african Rift Valley from the Mountain of God.jpg' },
   '圣安德烈亚斯断层':  { slug: 'san-andreas-fault',    en: 'San Andreas Fault',
                          file: 'Kluft-photo-Carrizo-Plain-Nov-2007-Img 0327.jpg' },
 

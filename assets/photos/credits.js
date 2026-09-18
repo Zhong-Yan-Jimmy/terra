@@ -285,10 +285,10 @@ window.TERRA_PHOTOS = {
   },
   "东非大裂谷": {
     src: "assets/photos/east-african-rift.jpg", w: 800, h: 450,
-    author: "Renvoy", license: "CC BY 4.0",
-    licenseUrl: "https://creativecommons.org/licenses/by/4.0",
-    source: "https://commons.wikimedia.org/wiki/File:Great_Rift_Valley_in_Kenya_by_Renvoy_(2).jpg",
-    title: "Great Rift Valley in Kenya by Renvoy (2).jpg",
+    author: "Elinami John", license: "CC BY-SA 4.0",
+    licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0",
+    source: "https://commons.wikimedia.org/wiki/File:Beauty_of_the_East_african_Rift_Valley_from_the_Mountain_of_God.jpg",
+    title: "Beauty of the East african Rift Valley from the Mountain of God.jpg",
     modified: true, bathymetry: false,
   },
   "圣安德烈亚斯断层": {
