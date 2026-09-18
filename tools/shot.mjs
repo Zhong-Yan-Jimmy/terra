@@ -110,6 +110,17 @@ const VIEWS = [
   { name: '29-map2d-rivers', map2d: { lat: 28, lon: 105, span: 55, raster: 'climate',
                                       vectors: ['rivers', 'coastline'] },
     desc: '专题图 · 长江与珠江，河流应是连续细线，既不横穿也不无故中断' },
+
+  // 配图：照片是 <img> 直接加载 assets/photos/ 下的文件。这条路在 file:// 与
+  // https:// 下的表现不同，所以既要看构图，也要看控制台有没有 ERR_FILE_NOT_FOUND
+  { name: '30-pick-mariana', lat: 11.35, lon: 142.2, pick: true, dist: 2.4,
+    desc: '点选马里亚纳海沟 · 配图应是海底测深图（不是实景照），署名 NASA' },
+  { name: '31-map2d-photo', map2d: { lat: 23, lon: 13, span: 80, raster: 'satellite' },
+    map2dPick: true,
+    desc: '专题图 · 在撒哈拉正中单击，迷你档案卡里应出现实景照与署名' },
+  { name: '32-narrow-photo', lat: 27.99, lon: 86.93, pick: true, dist: 2.4,
+    viewport: { width: 390, height: 844 },
+    desc: '窄屏 · 点选珠峰，卡片带照片后仍应完整可见、不横向溢出' },
 ];
 
 const args = Object.fromEntries(
@@ -218,6 +229,14 @@ async function main() {
 
   const report = [];
   for (const v of views) {
+    /* 2D 专题图是整屏覆盖层，上一个视角开过之后会一直留在屏上。
+       不主动关掉的话，这一屏拍到的还是上一张地图——3D 的档案卡其实
+       已经开了，只是被盖在下面：日志里读得到，图上却看不见 */
+    if (!v.map2d && await page.evaluate(() => !!(window.__terra?.map2d?.isOpen?.()))) {
+      await page.evaluate(() => document.getElementById('map2d-back').click());
+      await new Promise(r => setTimeout(r, 700));
+    }
+
     // 窄屏视角要换画布尺寸；量完尺寸再摆相机，否则缩放是按旧视口算的
     if (v.viewport) {
       await page.setViewport({ ...v.viewport, deviceScaleFactor: 1 });
@@ -267,6 +286,18 @@ async function main() {
         }
       }, v.map2d);
       await new Promise(r => setTimeout(r, 1100));   // 底图解码 + 首帧绘制
+
+      // 需要在图上点一下的视角：看迷你档案卡，含里面的配图
+      if (v.map2dPick) {
+        await page.evaluate(() => {
+          const c = document.getElementById('map2d-canvas');
+          const opt = { clientX: c.clientWidth / 2, clientY: c.clientHeight / 2,
+                        bubbles: true, pointerId: 1 };
+          c.dispatchEvent(new PointerEvent('pointerdown', opt));
+          c.dispatchEvent(new PointerEvent('pointerup', opt));
+        });
+        await new Promise(r => setTimeout(r, 800));   // 迷你档案有滑入过渡
+      }
     }
 
     /* 3D → 2D → 3D 的完整往返：这一条才是阶段 5 的验收标准，
@@ -353,6 +384,17 @@ async function main() {
           sections: [...el.querySelectorAll('.info-sec-title')].map(n => n.textContent.trim()),
           facts: [...el.querySelectorAll('.info-facts > div')]
             .map(n => n.textContent.replace(/\s+/g, ' ').trim()),
+          // 配图：读回 naturalWidth 才算真的解码了——DOM 里有 <img> 不代表图出来了
+          photo: (() => {
+            const f = el.querySelector('.info-photo');
+            if (!f) return null;
+            const im = f.querySelector('img');
+            return {
+              src: im ? im.getAttribute('src') : '(没有 img)',
+              w: im ? im.naturalWidth : 0, h: im ? im.naturalHeight : 0,
+              credit: (f.querySelector('figcaption')?.textContent || '').replace(/\s+/g, ' ').trim(),
+            };
+          })(),
         };
       });
 
@@ -363,6 +405,40 @@ async function main() {
         console.log(`        ${card.meta}`);
         if (card.sections.length) console.log(`        区块：${card.sections.join(' ／ ')}`);
         if (card.facts.length) console.log(`        速查：${card.facts.join('，')}`);
+        if (card.photo) {
+          console.log(`        配图：${card.photo.src}　${card.photo.w}×${card.photo.h}` +
+                      `${card.photo.w ? ' ✓' : ' ✗ 没有解码'}`);
+          console.log(`        署名：${card.photo.credit}`);
+        }
+      }
+    }
+
+    // 2D 迷你档案卡里的配图
+    if (v.map2dPick) {
+      const card = await page.evaluate(() => {
+        const el = document.getElementById('map2d-info');
+        if (!el || !el.classList.contains('is-open')) return null;
+        const q = s => { const n = el.querySelector(s); return n ? n.textContent.trim() : ''; };
+        const f = el.querySelector('.m2-photo');
+        const im = f ? f.querySelector('img') : null;
+        return {
+          title: q('h4'), brief: q('.m2-brief'),
+          photo: im ? { src: im.getAttribute('src'), w: im.naturalWidth, h: im.naturalHeight } : null,
+          credit: f ? (f.querySelector('figcaption')?.textContent || '').replace(/\s+/g, ' ').trim() : '',
+        };
+      });
+
+      if (!card) {
+        console.log('      ↳ 专题图上单击没有弹出档案 ✗');
+      } else {
+        console.log(`      ↳ ${card.title} —— ${card.brief}`);
+        if (card.photo) {
+          console.log(`        配图：${card.photo.src}　${card.photo.w}×${card.photo.h}` +
+                      `${card.photo.w ? ' ✓' : ' ✗ 没有解码'}`);
+          console.log(`        署名：${card.credit}`);
+        } else {
+          console.log('        配图：没有 ✗');
+        }
       }
     }
 
@@ -394,7 +470,38 @@ async function main() {
     };
   });
 
+  /* file:// 下 <img> 能不能读到同目录的图——档案卡的照片全靠这条通路。
+     这里踩过坑：贴图走 <img> 再 texImage2D 必抛 SecurityError（文件页面的 origin
+     是 opaque），地球当年就是个黑球；但纯 DOM 的 <img> 一直是通的，两者不是一回事。
+     探针把这条区别钉住：哪天有人把照片「顺手」改成 base64 内联、或者反过来
+     认定 <img> 在 file:// 下也不行，这一行会立刻变红。
+
+     故意取清单里最后一张：前面的视角点开过别的图，那些已经进了缓存，
+     而这里要验的是「一次都没加载过的图能不能读出来」 */
+  const imgProbe = await page.evaluate(async () => {
+    const P = window.TERRA_PHOTOS;
+    const names = P ? Object.keys(P) : [];
+    if (!names.length) return { empty: true };
+    const name = names[names.length - 1];
+    const src = P[name].src;
+    return await new Promise(res => {
+      const im = new Image();
+      im.onload = () => res({ name, src, w: im.naturalWidth, h: im.naturalHeight });
+      im.onerror = () => res({ name, src, error: true });
+      im.src = src;
+    });
+  });
+
   console.log('\n运行时状态:');
+  if (imgProbe.empty) {
+    console.log('  file:// <img> 探针 — 跳过（TERRA_PHOTOS 是空的）');
+  } else if (imgProbe.error) {
+    console.log(`  file:// <img> 探针 ✗ ${imgProbe.src} 加载失败`);
+    problems.push(`[配图] ${imgProbe.src} 加载失败`);
+  } else {
+    console.log(`  file:// <img> 探针 ✓ ${imgProbe.name}　${imgProbe.w}×${imgProbe.h}`);
+  }
+
   if (info) {
     console.log(`  场景对象 ${info.objects} 个，验证点 ${info.probeCount} 个子对象`);
     console.log(`  相机 ${JSON.stringify(info.camera)}`);

@@ -384,8 +384,11 @@
                        `${Math.abs(ll.lon).toFixed(2)}°${ll.lon >= 0 ? 'E' : 'W'}`]);
     rows.push(['下垫面', d.land ? '陆地' : '海洋']);
 
+    const photo = (d.feature && window.TerraPhotos)
+      ? TerraPhotos.figureHTML(d.feature.name, 'm2-photo') : '';
+
     panel.innerHTML =
-      `<h4>${esc(title)}</h4><p class="m2-brief">${esc(brief)}</p>` +
+      `<h4>${esc(title)}</h4>` + photo + `<p class="m2-brief">${esc(brief)}</p>` +
       '<dl class="m2-facts">' + rows.map(([k, val]) =>
         `<div><dt>${esc(k)}</dt><dd>${esc(val)}</dd></div>`).join('') + '</dl>' +
       (d.feature ? `<p class="m2-desc">${esc(d.feature.desc)}</p>` : '');

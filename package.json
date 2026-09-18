@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "fetch": "node tools/fetch-data.mjs",
-    "verify": "node tools/verify-uv.mjs"
+    "verify": "node tools/verify-uv.mjs",
+    "photos": "node tools/fetch-photos.mjs",
+    "photos:check": "node tools/verify-photos.mjs",
+    "photos:sheet": "node tools/contact-sheet.mjs"
   },
   "devDependencies": {
     "geotiff": "^2.1.3",

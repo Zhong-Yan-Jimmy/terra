@@ -205,7 +205,10 @@
     let body = '';
 
     if (d.feature) {
-      body += section('', `<p class="info-desc">${esc(d.feature.desc)}</p>` +
+      // 配图排在正文之前：点开一个地标，先看见它长什么样，再读成因
+      const photo = window.TerraPhotos
+        ? TerraPhotos.figureHTML(d.feature.name, 'info-photo') : '';
+      body += section('', photo + `<p class="info-desc">${esc(d.feature.desc)}</p>` +
                           factsTable(d.feature.facts));
     }
 

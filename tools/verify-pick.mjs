@@ -21,6 +21,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = p => readFileSync(join(ROOT, p), 'utf8');
@@ -152,3 +153,28 @@ for (let i = 0; i < 400; i++) {
   if (!window.__probe(lat, lon).plate) hole++;
 }
 console.log(`\n  板块多边形全球覆盖抽查 400 点：${hole === 0 ? '无空洞 ✓' : hole + ' 点落空 ✗'}`);
+
+/* ---------------- 配图索引与地貌清单的对应 ---------------- */
+
+/* 两个方向都会出问题，而两种问题在页面上都看不出来：
+     多一个键 → 拼错了字，那张图永远不会被点到，纯粹占着仓库
+     少一个键 → 卡片点开是空的。js/photos.js 查不到就返回空串，
+                不报错、不留痕迹，56 张里少一张肉眼翻不出来
+   所以这条要在数据集层面卡死，别指望点开卡片时发现 */
+function loadWindow(rel, key) {
+  const sandbox = { window: {} };
+  vm.runInNewContext(read(rel), sandbox);
+  return sandbox.window[key];
+}
+
+const names = loadWindow('js/data.js', 'TERRA_DATA').features.map(f => f.name);
+const photoKeys = Object.keys(loadWindow('assets/photos/credits.js', 'TERRA_PHOTOS') || {});
+const noPhoto = names.filter(n => !photoKeys.includes(n));
+const ghost = photoKeys.filter(k => !names.includes(k));
+
+console.log(`\n  配图索引 ${photoKeys.length} 条 / 地貌 ${names.length} 个：` +
+  (noPhoto.length || ghost.length
+    ? `✗ 缺 ${noPhoto.length}，多 ${ghost.length}`
+    : '一一对应 ✓'));
+if (noPhoto.length) console.log(`    没有配图：${noPhoto.join('、')}`);
+if (ghost.length) console.log(`    索引里没有对应地貌：${ghost.join('、')}`);

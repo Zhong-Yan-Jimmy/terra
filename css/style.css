@@ -458,7 +458,7 @@ html, body {
   bottom: 72px;                       /* 让开底部提示条 */
   z-index: var(--z-drawer);
   width: 378px;
-  max-height: min(72vh, 704px);
+  max-height: min(76vh, 760px);       /* 加了配图之后要给它多留一点高度 */
   overflow-y: auto;
   overscroll-behavior: contain;
   background: var(--panel-solid);
@@ -628,6 +628,39 @@ html, body {
   text-align: right;
 }
 
+/* 具名地貌的配图（js/photos.js 产出）。左右负 margin 抵消
+   .info-body 的 18px 内边距，让照片从卡片边缘通到边缘 */
+.info-photo { margin: 0 -18px 14px; }
+
+.info-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;               /* 图未解码时先占好位子，点选不跳动 */
+  object-fit: cover;
+  background: rgba(6, 17, 29, 0.72);  /* 占位是刻意的暗块，不是白闪 */
+}
+
+.info-photo figcaption {
+  padding: 6px 18px 0;
+  font-size: 9.5px;
+  line-height: 1.5;
+  color: var(--text-mute);
+}
+/* 署名行是 CC 许可条件的一部分，链接要看得见、点得到 */
+.info-photo figcaption a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
+  text-underline-offset: 2px;
+}
+.info-photo figcaption a:hover { color: var(--accent); }
+
+/* 矮屏上 16:9 会把正文挤到看不见，压成横带 */
+@media (max-height: 760px) {
+  .info-photo img { aspect-ratio: 21 / 9; }
+}
+
 /* ---------------- 2D 专题图 ---------------- */
 
 .map2d {
@@ -736,6 +769,11 @@ html, body {
   bottom: 60px;
   width: 306px;
   padding: 15px 17px;
+  /* 底边固定在 60px 处往上长，加了配图后矮屏会顶穿屏幕顶：
+     实测 1366×640 上只剩 18px 余量。封顶并允许滚动 */
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   /* 比 3D 的档案卡更实一档：底图会有雪白的高原和沙漠，
      透明度一高，底下的地图文字就会像水印一样透上来 */
   background: rgba(5, 13, 22, 0.93);
@@ -749,6 +787,10 @@ html, body {
   transition: opacity var(--t-mid) var(--ease), transform var(--t-slow) var(--ease);
 }
 .m2-info.is-open { opacity: 1; transform: none; pointer-events: auto; }
+
+.m2-info::-webkit-scrollbar { width: 6px; }
+.m2-info::-webkit-scrollbar-track { background: transparent; }
+.m2-info::-webkit-scrollbar-thumb { background: var(--accent-dim); }
 
 .m2-info h4 {
   margin: 0;
@@ -790,6 +832,30 @@ html, body {
   line-height: 1.72;
   color: var(--text);
 }
+
+/* 迷你档案里的配图，比 3D 卡那版更紧凑：面板只有 306px 宽 */
+.m2-photo { margin: 10px 0 0; }
+.m2-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: rgba(6, 17, 29, 0.72);
+}
+.m2-photo figcaption {
+  padding-top: 5px;
+  font-size: 9px;
+  line-height: 1.5;
+  color: var(--text-mute);
+}
+.m2-photo figcaption a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
+  text-underline-offset: 2px;
+}
+.m2-photo figcaption a:hover { color: var(--accent); }
 
 .m2-hint {
   position: absolute;
